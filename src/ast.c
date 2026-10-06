@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ast.h"
-        
-
 static ASTNode* create_node(ASTNodeType type, int line) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     if (!node) {
