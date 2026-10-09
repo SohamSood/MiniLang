@@ -124,12 +124,17 @@ print(5 * 2);
 
 ```text
 MiniLang/
-|-- src/
+|-- include/            Header definitions (.h)
+|   |-- lexer.h         Lexer token definitions
+|   |-- parser.h        Parser function declarations
+|   |-- ast.h           AST node data structures
+|   `-- evaluator.h     Runtime environment & evaluator declarations
+|-- src/                Implementation source files (.c)
 |   |-- main.c          CLI and pipeline setup
-|   |-- lexer.c/.h      Lexical analysis
-|   |-- parser.c/.h     Recursive-descent parser
-|   |-- ast.c/.h        AST construction and cleanup
-|   `-- evaluator.c/.h  Tree-walk evaluator and runtime
+|   |-- lexer.c         Lexical analysis implementation
+|   |-- parser.c        Recursive-descent parser implementation
+|   |-- ast.c           AST construction and cleanup
+|   `-- evaluator.c     Tree-walk evaluator and runtime
 |-- examples/           Example MiniLang programs
 |-- demo.ml             Demonstration program
 |-- Makefile            GCC build configuration
@@ -152,7 +157,7 @@ make
 Or compile directly:
 
 ```bash
-gcc src/main.c src/lexer.c src/parser.c src/ast.c src/evaluator.c -o minilang -Wall -Wextra -std=c99 -O2
+gcc -Iinclude src/main.c src/lexer.c src/parser.c src/ast.c src/evaluator.c -o minilang -Wall -Wextra -std=c99 -O2
 ```
 
 ### Run

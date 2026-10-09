@@ -2,11 +2,10 @@
 #define EVALUATOR_H
 
 /*
- * ast.h
- * -----
- * Defines the data structures used to represent the
- * Abstract Syntax Tree (AST) of a MiniLang program.
- * Also provides declarations for creating and managing AST nodes.
+ * evaluator.h
+ * -----------
+ * Declares runtime structures and functions for AST evaluation,
+ * symbol table environments, and function registries.
  */
 
  

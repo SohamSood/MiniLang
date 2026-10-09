@@ -4,7 +4,7 @@
  * Traverses the AST and executes the parsed MiniLang program.
  */
 
- #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "evaluator.h"

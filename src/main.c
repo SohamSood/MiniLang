@@ -13,6 +13,14 @@
 #include "parser.h"
 #include "evaluator.h"
 
+typedef struct {
+    const char* filepath;
+    int dump_ast;
+    int compact_ast;
+    int dump_tokens;
+} CliOptions;
+
+// Safe file ingestion with size validation and clean error handling
 static char* read_file(const char* filepath) {
     FILE* file = fopen(filepath, "rb");
     if (!file) {
@@ -20,8 +28,18 @@ static char* read_file(const char* filepath) {
         return NULL;
     }
 
-    fseek(file, 0, SEEK_END);
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fprintf(stderr, "Error: failed to seek file '%s'\n", filepath);
+        fclose(file);
+        return NULL;
+    }
+
     long length = ftell(file);
+    if (length < 0) {
+        fprintf(stderr, "Error: failed to determine size of file '%s'\n", filepath);
+        fclose(file);
+        return NULL;
+    }
     fseek(file, 0, SEEK_SET);
 
     char* buffer = (char*)malloc(length + 1);
@@ -31,7 +49,7 @@ static char* read_file(const char* filepath) {
         return NULL;
     }
 
-    size_t read_bytes = fread(buffer, 1, length, file);
+    size_t read_bytes = fread(buffer, 1, (size_t)length, file);
     buffer[read_bytes] = '\0';
     fclose(file);
 
@@ -49,60 +67,26 @@ static void print_usage(const char* program_name) {
     printf("  --help         Display this help message\n");
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        print_usage(argv[0]);
-        return 1;
+static void dump_tokens(const char* source) {
+    printf("=== Lexer Tokens ===\n");
+    Lexer token_lexer;
+    lexer_init(&token_lexer, source);
+    while (1) {
+        Token tok = lexer_next_token(&token_lexer);
+        printf("Line %-3d | Type: %-15s | Lexeme: '%s'\n",
+               tok.line, token_type_to_string(tok.type), tok.text);
+        if (tok.type == TOKEN_EOF || tok.type == TOKEN_ERROR) break;
+    }
+    printf("====================\n\n");
+}
+
+static int run_pipeline(const char* source, const CliOptions* options) {
+    // Stage 1: Optional token dump
+    if (options->dump_tokens) {
+        dump_tokens(source);
     }
 
-    const char* filepath = NULL;
-    int dump_ast = 0;
-    int compact_ast = 0;
-    int dump_tokens = 0;
-
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--dump-ast") == 0) {
-            dump_ast = 1;
-        } else if (strcmp(argv[i], "--compact-ast") == 0) {
-            compact_ast = 1;
-        } else if (strcmp(argv[i], "--tokens") == 0) {
-            dump_tokens = 1;
-        } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            print_usage(argv[0]);
-            return 0;
-        } else if (argv[i][0] != '-') {
-            filepath = argv[i];
-        } else {
-            fprintf(stderr, "Warning: unknown option '%s'\n", argv[i]);
-        }
-    }
-
-    if (!filepath) {
-        fprintf(stderr, "Error: no input file provided\n");
-        print_usage(argv[0]);
-        return 1;
-    }
-
-    char* source = read_file(filepath);
-    if (!source) {
-        return 1;
-    }
-
-    // Optional: Dump Tokens
-    if (dump_tokens) {
-        printf("=== Lexer Tokens ===\n");
-        Lexer token_lexer;
-        lexer_init(&token_lexer, source);
-        while (1) {
-            Token tok = lexer_next_token(&token_lexer);
-            printf("Line %-3d | Type: %-15s | Lexeme: '%s'\n",
-                   tok.line, token_type_to_string(tok.type), tok.text);
-            if (tok.type == TOKEN_EOF || tok.type == TOKEN_ERROR) break;
-        }
-        printf("====================\n\n");
-    }
-
-    // Pipeline: Lexer -> Parser -> AST
+    // Stage 2: Lexer & Parser
     Lexer lexer;
     lexer_init(&lexer, source);
 
@@ -114,12 +98,11 @@ int main(int argc, char* argv[]) {
     if (parser.has_error) {
         fprintf(stderr, "Compilation failed due to syntax errors.\n");
         if (program) ast_free(program);
-        free(source);
         return 1;
     }
 
-    // Optional: Visual AST Output
-    if (compact_ast) {
+    // Stage 3: Optional AST Visualizations
+    if (options->compact_ast) {
         printf("AST: ");
         for (int i = 0; i < program->data.block.count; i++) {
             ast_print_compact(program->data.block.statements[i]);
@@ -128,18 +111,58 @@ int main(int argc, char* argv[]) {
         printf("\n");
     }
 
-    if (dump_ast) {
+    if (options->dump_ast) {
         printf("=== Abstract Syntax Tree (AST) ===\n");
         ast_print(program);
         printf("==================================\n\n");
     }
 
-    // Pipeline: Evaluator -> Output
+    // Stage 4: Evaluator Execution
     evaluate(program);
 
-    // Free all allocated memory
+    // Stage 5: Clean memory
     ast_free(program);
-    free(source);
-
     return 0;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        print_usage(argv[0]);
+        return 1;
+    }
+
+    CliOptions options = { NULL, 0, 0, 0 };
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--dump-ast") == 0) {
+            options.dump_ast = 1;
+        } else if (strcmp(argv[i], "--compact-ast") == 0) {
+            options.compact_ast = 1;
+        } else if (strcmp(argv[i], "--tokens") == 0) {
+            options.dump_tokens = 1;
+        } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            print_usage(argv[0]);
+            return 0;
+        } else if (argv[i][0] != '-') {
+            options.filepath = argv[i];
+        } else {
+            fprintf(stderr, "Warning: unknown option '%s'\n", argv[i]);
+        }
+    }
+
+    if (!options.filepath) {
+        fprintf(stderr, "Error: no input file provided\n");
+        print_usage(argv[0]);
+        return 1;
+    }
+
+    char* source = read_file(options.filepath);
+    if (!source) {
+        return 1;
+    }
+
+    int exit_code = run_pipeline(source, &options);
+
+    free(source);
+    return exit_code;
 }
