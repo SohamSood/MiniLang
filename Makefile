@@ -32,3 +32,5 @@ test: $(TARGET)
 	./$(TARGET) examples/05_loop.ml
 	./$(TARGET) examples/06_functions.ml
 	./$(TARGET) examples/07_fibonacci.ml
+	./$(TARGET) examples/09_for_loop.ml
+	./$(TARGET) examples/10_inc_dec.ml

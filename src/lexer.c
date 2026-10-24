@@ -64,6 +64,7 @@ static TokenType check_keyword(const char* text) {
     if (strcmp(text, "if") == 0) return TOKEN_IF;
     if (strcmp(text, "else") == 0) return TOKEN_ELSE;
     if (strcmp(text, "while") == 0) return TOKEN_WHILE;
+    if (strcmp(text, "for") == 0) return TOKEN_FOR;
     if (strcmp(text, "function") == 0) return TOKEN_FUNCTION;
     if (strcmp(text, "return") == 0) return TOKEN_RETURN;
     return TOKEN_IDENTIFIER;
@@ -135,6 +136,14 @@ Token lexer_next_token(Lexer* lexer) {
         advance(lexer); advance(lexer);
         return make_token(TOKEN_GREATER_EQUAL, ">=", start_line);
     }
+    if (c == '+' && peek_next(lexer) == '+') {
+        advance(lexer); advance(lexer);
+        return make_token(TOKEN_INCREMENT, "++", start_line);
+    }
+    if (c == '-' && peek_next(lexer) == '-') {
+        advance(lexer); advance(lexer);
+        return make_token(TOKEN_DECREMENT, "--", start_line);
+    }
 
     // Single-character operators and delimiters
     advance(lexer);
@@ -170,6 +179,7 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_IF: return "if";
         case TOKEN_ELSE: return "else";
         case TOKEN_WHILE: return "while";
+        case TOKEN_FOR: return "for";
         case TOKEN_FUNCTION: return "function";
         case TOKEN_RETURN: return "return";
         case TOKEN_PLUS: return "+";
@@ -183,6 +193,8 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_LESS_EQUAL: return "<=";
         case TOKEN_GREATER: return ">";
         case TOKEN_GREATER_EQUAL: return ">=";
+        case TOKEN_INCREMENT: return "++";
+        case TOKEN_DECREMENT: return "--";
         case TOKEN_LPAREN: return "(";
         case TOKEN_RPAREN: return ")";
         case TOKEN_LBRACE: return "{";

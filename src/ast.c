@@ -103,6 +103,23 @@ ASTNode* ast_new_while(ASTNode* cond, ASTNode* body, int line) {
     return node;
 }
 
+ASTNode* ast_new_for(ASTNode* init, ASTNode* condition, ASTNode* update, ASTNode* body, int line) {
+    ASTNode* node = create_node(AST_FOR, line);
+    node->data.for_stmt.init = init;
+    node->data.for_stmt.condition = condition;
+    node->data.for_stmt.update = update;
+    node->data.for_stmt.body = body;
+    return node;
+}
+
+ASTNode* ast_new_inc_dec(UpdateOpType op, const char* name, int line) {
+    ASTNode* node = create_node(AST_INC_DEC, line);
+    node->data.inc_dec.op = op;
+    strncpy(node->data.inc_dec.name, name, sizeof(node->data.inc_dec.name) - 1);
+    node->data.inc_dec.name[sizeof(node->data.inc_dec.name) - 1] = '\0';
+    return node;
+}
+
 ASTNode* ast_new_func_decl(const char* name, char** params, int param_count, ASTNode* body, int line) {
     ASTNode* node = create_node(AST_FUNC_DECL, line);
     strncpy(node->data.func_decl.name, name, sizeof(node->data.func_decl.name) - 1);
@@ -140,6 +157,16 @@ const char* binary_op_to_string(BinaryOpType op) {
         case OP_LTE: return "<=";
         case OP_GT:  return ">";
         case OP_GTE: return ">=";
+        default: return "?";
+    }
+}
+
+const char* update_op_to_string(UpdateOpType op) {
+    switch (op) {
+        case OP_PRE_INC:  return "++ (prefix)";
+        case OP_POST_INC: return "++ (postfix)";
+        case OP_PRE_DEC:  return "-- (prefix)";
+        case OP_POST_DEC: return "-- (postfix)";
         default: return "?";
     }
 }
@@ -188,6 +215,22 @@ void ast_free(ASTNode* node) {
         case AST_WHILE:
             ast_free(node->data.while_stmt.condition);
             ast_free(node->data.while_stmt.body);
+            break;
+
+        case AST_FOR:
+            if (node->data.for_stmt.init) {
+                ast_free(node->data.for_stmt.init);
+            }
+            if (node->data.for_stmt.condition) {
+                ast_free(node->data.for_stmt.condition);
+            }
+            if (node->data.for_stmt.update) {
+                ast_free(node->data.for_stmt.update);
+            }
+            ast_free(node->data.for_stmt.body);
+            break;
+
+        case AST_INC_DEC:
             break;
 
         case AST_FUNC_DECL:
@@ -254,6 +297,25 @@ void ast_print_compact(ASTNode* node) {
         case AST_ASSIGN:
             printf("%s = ", node->data.assign.name);
             ast_print_compact(node->data.assign.expr);
+            break;
+
+        case AST_INC_DEC:
+            switch (node->data.inc_dec.op) {
+                case OP_PRE_INC:  printf("++%s", node->data.inc_dec.name); break;
+                case OP_POST_INC: printf("%s++", node->data.inc_dec.name); break;
+                case OP_PRE_DEC:  printf("--%s", node->data.inc_dec.name); break;
+                case OP_POST_DEC: printf("%s--", node->data.inc_dec.name); break;
+            }
+            break;
+
+        case AST_FOR:
+            printf("FOR(");
+            if (node->data.for_stmt.init) ast_print_compact(node->data.for_stmt.init);
+            printf("; ");
+            if (node->data.for_stmt.condition) ast_print_compact(node->data.for_stmt.condition);
+            printf("; ");
+            if (node->data.for_stmt.update) ast_print_compact(node->data.for_stmt.update);
+            printf(")");
             break;
 
         case AST_CALL:
@@ -354,6 +416,33 @@ static void ast_print_indented(ASTNode* node, int indent) {
             ast_print_indented(node->data.while_stmt.condition, indent + 2);
             print_indent(indent + 1); printf("BODY:\n");
             ast_print_indented(node->data.while_stmt.body, indent + 2);
+            break;
+
+        case AST_FOR:
+            printf("FOR:\n");
+            if (node->data.for_stmt.init) {
+                print_indent(indent + 1); printf("INIT:\n");
+                ast_print_indented(node->data.for_stmt.init, indent + 2);
+            }
+            if (node->data.for_stmt.condition) {
+                print_indent(indent + 1); printf("CONDITION:\n");
+                ast_print_indented(node->data.for_stmt.condition, indent + 2);
+            }
+            if (node->data.for_stmt.update) {
+                print_indent(indent + 1); printf("UPDATE:\n");
+                ast_print_indented(node->data.for_stmt.update, indent + 2);
+            }
+            print_indent(indent + 1); printf("BODY:\n");
+            ast_print_indented(node->data.for_stmt.body, indent + 2);
+            break;
+
+        case AST_INC_DEC:
+            switch (node->data.inc_dec.op) {
+                case OP_PRE_INC:  printf("PRE_INC (++%s)\n", node->data.inc_dec.name); break;
+                case OP_POST_INC: printf("POST_INC (%s++)\n", node->data.inc_dec.name); break;
+                case OP_PRE_DEC:  printf("PRE_DEC (--%s)\n", node->data.inc_dec.name); break;
+                case OP_POST_DEC: printf("POST_DEC (%s--)\n", node->data.inc_dec.name); break;
+            }
             break;
 
         case AST_FUNC_DECL:

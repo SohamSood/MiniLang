@@ -59,6 +59,32 @@ static ASTNode* parse_primary(Parser* parser) {
         return ast_new_binary_op(OP_SUB, ast_new_number(0.0, line), right, line);
     }
 
+    if (match(parser, TOKEN_INCREMENT)) {
+        advance(parser);
+        if (!match(parser, TOKEN_IDENTIFIER)) {
+            syntax_error(parser, "expected variable name after '++'");
+            return NULL;
+        }
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        advance(parser);
+        return ast_new_inc_dec(OP_PRE_INC, name, line);
+    }
+
+    if (match(parser, TOKEN_DECREMENT)) {
+        advance(parser);
+        if (!match(parser, TOKEN_IDENTIFIER)) {
+            syntax_error(parser, "expected variable name after '--'");
+            return NULL;
+        }
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        advance(parser);
+        return ast_new_inc_dec(OP_PRE_DEC, name, line);
+    }
+
     if (match(parser, TOKEN_LPAREN)) {
         advance(parser);
         ASTNode* expr = parse_expression(parser);
@@ -93,6 +119,12 @@ static ASTNode* parse_primary(Parser* parser) {
             }
             expect(parser, TOKEN_RPAREN, "expected ')' after function arguments");
             return ast_new_call(name, args, count, line);
+        } else if (match(parser, TOKEN_INCREMENT)) {
+            advance(parser);
+            return ast_new_inc_dec(OP_POST_INC, name, line);
+        } else if (match(parser, TOKEN_DECREMENT)) {
+            advance(parser);
+            return ast_new_inc_dec(OP_POST_DEC, name, line);
         }
 
         return ast_new_var(name, line);
@@ -258,6 +290,170 @@ static ASTNode* parse_while(Parser* parser) {
     return ast_new_while(condition, body, line);
 }
 
+static ASTNode* parse_for(Parser* parser) {
+    int line = parser->current_token.line;
+    advance(parser); // consume 'for'
+
+    expect(parser, TOKEN_LPAREN, "expected '(' after 'for'");
+
+    // 1. Parse Init
+    ASTNode* init = NULL;
+    if (match(parser, TOKEN_SEMICOLON)) {
+        advance(parser); // empty init
+    } else if (match(parser, TOKEN_LET)) {
+        init = parse_var_decl(parser); // parse_var_decl consumes the ';'
+    } else if (match(parser, TOKEN_IDENTIFIER)) {
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        int id_line = parser->current_token.line;
+        advance(parser);
+
+        if (match(parser, TOKEN_ASSIGN)) {
+            advance(parser);
+            ASTNode* expr = parse_expression(parser);
+            expect(parser, TOKEN_SEMICOLON, "expected ';' after for-loop initialization");
+            init = ast_new_assign(name, expr, id_line);
+        } else if (match(parser, TOKEN_INCREMENT)) {
+            advance(parser);
+            expect(parser, TOKEN_SEMICOLON, "expected ';' after for-loop initialization");
+            init = ast_new_inc_dec(OP_POST_INC, name, id_line);
+        } else if (match(parser, TOKEN_DECREMENT)) {
+            advance(parser);
+            expect(parser, TOKEN_SEMICOLON, "expected ';' after for-loop initialization");
+            init = ast_new_inc_dec(OP_POST_DEC, name, id_line);
+        } else {
+            syntax_error(parser, "expected '=', '++', or '--' after identifier in for-loop init");
+            return NULL;
+        }
+    } else if (match(parser, TOKEN_INCREMENT)) {
+        int inc_line = parser->current_token.line;
+        advance(parser);
+        if (!match(parser, TOKEN_IDENTIFIER)) {
+            syntax_error(parser, "expected variable name after '++' in for-loop init");
+            return NULL;
+        }
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        advance(parser);
+        expect(parser, TOKEN_SEMICOLON, "expected ';' after for-loop initialization");
+        init = ast_new_inc_dec(OP_PRE_INC, name, inc_line);
+    } else if (match(parser, TOKEN_DECREMENT)) {
+        int dec_line = parser->current_token.line;
+        advance(parser);
+        if (!match(parser, TOKEN_IDENTIFIER)) {
+            syntax_error(parser, "expected variable name after '--' in for-loop init");
+            return NULL;
+        }
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        advance(parser);
+        expect(parser, TOKEN_SEMICOLON, "expected ';' after for-loop initialization");
+        init = ast_new_inc_dec(OP_PRE_DEC, name, dec_line);
+    } else {
+        syntax_error(parser, "invalid for-loop initialization");
+        return NULL;
+    }
+
+    // 2. Parse Condition
+    ASTNode* condition = NULL;
+    if (!match(parser, TOKEN_SEMICOLON)) {
+        condition = parse_expression(parser);
+    }
+    expect(parser, TOKEN_SEMICOLON, "expected ';' after for condition");
+
+    // 3. Parse Update
+    ASTNode* update = NULL;
+    if (!match(parser, TOKEN_RPAREN)) {
+        if (match(parser, TOKEN_IDENTIFIER)) {
+            char name[64];
+            strncpy(name, parser->current_token.text, sizeof(name) - 1);
+            name[sizeof(name) - 1] = '\0';
+            int id_line = parser->current_token.line;
+            advance(parser);
+
+            if (match(parser, TOKEN_ASSIGN)) {
+                advance(parser);
+                ASTNode* expr = parse_expression(parser);
+                update = ast_new_assign(name, expr, id_line);
+            } else if (match(parser, TOKEN_INCREMENT)) {
+                advance(parser);
+                update = ast_new_inc_dec(OP_POST_INC, name, id_line);
+            } else if (match(parser, TOKEN_DECREMENT)) {
+                advance(parser);
+                update = ast_new_inc_dec(OP_POST_DEC, name, id_line);
+            } else if (match(parser, TOKEN_LPAREN)) {
+                advance(parser);
+                int capacity = 4;
+                int count = 0;
+                ASTNode** args = (ASTNode**)malloc(sizeof(ASTNode*) * capacity);
+                if (!match(parser, TOKEN_RPAREN)) {
+                    while (1) {
+                        if (count >= capacity) {
+                            capacity *= 2;
+                            args = (ASTNode**)realloc(args, sizeof(ASTNode*) * capacity);
+                        }
+                        args[count++] = parse_expression(parser);
+                        if (match(parser, TOKEN_COMMA)) {
+                            advance(parser);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                expect(parser, TOKEN_RPAREN, "expected ')' after arguments");
+                update = ast_new_call(name, args, count, id_line);
+            } else {
+                syntax_error(parser, "invalid update expression in for-loop");
+                return NULL;
+            }
+        } else if (match(parser, TOKEN_INCREMENT)) {
+            int inc_line = parser->current_token.line;
+            advance(parser);
+            if (!match(parser, TOKEN_IDENTIFIER)) {
+                syntax_error(parser, "expected variable name after '++' in for-loop update");
+                return NULL;
+            }
+            char name[64];
+            strncpy(name, parser->current_token.text, sizeof(name) - 1);
+            name[sizeof(name) - 1] = '\0';
+            advance(parser);
+            update = ast_new_inc_dec(OP_PRE_INC, name, inc_line);
+        } else if (match(parser, TOKEN_DECREMENT)) {
+            int dec_line = parser->current_token.line;
+            advance(parser);
+            if (!match(parser, TOKEN_IDENTIFIER)) {
+                syntax_error(parser, "expected variable name after '--' in for-loop update");
+                return NULL;
+            }
+            char name[64];
+            strncpy(name, parser->current_token.text, sizeof(name) - 1);
+            name[sizeof(name) - 1] = '\0';
+            advance(parser);
+            update = ast_new_inc_dec(OP_PRE_DEC, name, dec_line);
+        } else {
+            update = parse_expression(parser);
+        }
+    }
+    expect(parser, TOKEN_RPAREN, "expected ')' after for-loop clauses");
+
+    // 4. Parse Body
+    ASTNode* body = NULL;
+    if (match(parser, TOKEN_LBRACE)) {
+        body = parse_block(parser);
+    } else {
+        ASTNode* stmt = parse_statement(parser);
+        body = ast_new_block(line);
+        if (stmt) {
+            ast_block_add(body, stmt);
+        }
+    }
+
+    return ast_new_for(init, condition, update, body, line);
+}
+
 static ASTNode* parse_func_decl(Parser* parser) {
     int line = parser->current_token.line;
     advance(parser); // consume 'function'
@@ -337,11 +533,43 @@ static ASTNode* parse_statement(Parser* parser) {
     if (match(parser, TOKEN_WHILE)) {
         return parse_while(parser);
     }
+    if (match(parser, TOKEN_FOR)) {
+        return parse_for(parser);
+    }
     if (match(parser, TOKEN_FUNCTION)) {
         return parse_func_decl(parser);
     }
     if (match(parser, TOKEN_RETURN)) {
         return parse_return(parser);
+    }
+
+    if (match(parser, TOKEN_INCREMENT)) {
+        int line = parser->current_token.line;
+        advance(parser);
+        if (!match(parser, TOKEN_IDENTIFIER)) {
+            syntax_error(parser, "expected variable name after '++'");
+            return NULL;
+        }
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        advance(parser);
+        expect(parser, TOKEN_SEMICOLON, "expected ';' after pre-increment");
+        return ast_new_inc_dec(OP_PRE_INC, name, line);
+    }
+    if (match(parser, TOKEN_DECREMENT)) {
+        int line = parser->current_token.line;
+        advance(parser);
+        if (!match(parser, TOKEN_IDENTIFIER)) {
+            syntax_error(parser, "expected variable name after '--'");
+            return NULL;
+        }
+        char name[64];
+        strncpy(name, parser->current_token.text, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        advance(parser);
+        expect(parser, TOKEN_SEMICOLON, "expected ';' after pre-decrement");
+        return ast_new_inc_dec(OP_PRE_DEC, name, line);
     }
 
     if (match(parser, TOKEN_IDENTIFIER)) {
@@ -356,6 +584,14 @@ static ASTNode* parse_statement(Parser* parser) {
             ASTNode* expr = parse_expression(parser);
             expect(parser, TOKEN_SEMICOLON, "expected ';' after assignment");
             return ast_new_assign(name, expr, line);
+        } else if (match(parser, TOKEN_INCREMENT)) {
+            advance(parser);
+            expect(parser, TOKEN_SEMICOLON, "expected ';' after increment");
+            return ast_new_inc_dec(OP_POST_INC, name, line);
+        } else if (match(parser, TOKEN_DECREMENT)) {
+            advance(parser);
+            expect(parser, TOKEN_SEMICOLON, "expected ';' after decrement");
+            return ast_new_inc_dec(OP_POST_DEC, name, line);
         } else if (match(parser, TOKEN_LPAREN)) {
             advance(parser);
             int capacity = 4;

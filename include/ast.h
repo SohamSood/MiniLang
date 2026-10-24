@@ -19,6 +19,8 @@ typedef enum {
     AST_BLOCK,
     AST_IF,
     AST_WHILE,
+    AST_FOR,
+    AST_INC_DEC,
     AST_FUNC_DECL,
     AST_CALL,
     AST_RETURN,
@@ -37,6 +39,13 @@ typedef enum {
     OP_GT,        // >
     OP_GTE        // >=
 } BinaryOpType;
+
+typedef enum {
+    OP_PRE_INC,   // ++a
+    OP_POST_INC,  // a++
+    OP_PRE_DEC,   // --a
+    OP_POST_DEC   // a--
+} UpdateOpType;
 
 struct ASTNode;
 
@@ -61,6 +70,12 @@ typedef struct ASTNode {
             struct ASTNode* left;
             struct ASTNode* right;
         } binary_op;
+
+        // AST_INC_DEC: ++a, a++, --a, a--
+        struct {
+            char name[64];
+            UpdateOpType op;
+        } inc_dec;
 
         // AST_PRINT: print(expr);
         struct {
@@ -99,6 +114,14 @@ typedef struct ASTNode {
             struct ASTNode* body;        // AST_BLOCK
         } while_stmt;
 
+        // AST_FOR: for (init; condition; update) { ... }
+        struct {
+            struct ASTNode* init;        // nullable
+            struct ASTNode* condition;   // nullable
+            struct ASTNode* update;      // nullable
+            struct ASTNode* body;        // AST_BLOCK
+        } for_stmt;
+
         // AST_FUNC_DECL: function name(p1, p2) { ... }
         struct {
             char name[64];
@@ -125,6 +148,7 @@ typedef struct ASTNode {
 ASTNode* ast_new_number(double value, int line);
 ASTNode* ast_new_var(const char* name, int line);
 ASTNode* ast_new_binary_op(BinaryOpType op, ASTNode* left, ASTNode* right, int line);
+ASTNode* ast_new_inc_dec(UpdateOpType op, const char* name, int line);
 ASTNode* ast_new_print(ASTNode* expr, int line);
 ASTNode* ast_new_var_decl(const char* name, ASTNode* init_expr, int line);
 ASTNode* ast_new_assign(const char* name, ASTNode* expr, int line);
@@ -133,6 +157,7 @@ void     ast_block_add(ASTNode* block, ASTNode* stmt);
 ASTNode* ast_new_program(void);
 ASTNode* ast_new_if(ASTNode* cond, ASTNode* then_branch, ASTNode* else_branch, int line);
 ASTNode* ast_new_while(ASTNode* cond, ASTNode* body, int line);
+ASTNode* ast_new_for(ASTNode* init, ASTNode* condition, ASTNode* update, ASTNode* body, int line);
 ASTNode* ast_new_func_decl(const char* name, char** params, int param_count, ASTNode* body, int line);
 ASTNode* ast_new_call(const char* name, ASTNode** args, int arg_count, int line);
 ASTNode* ast_new_return(ASTNode* expr, int line);
@@ -144,7 +169,8 @@ void ast_free(ASTNode* node);
 void ast_print(ASTNode* node);
 void ast_print_compact(ASTNode* node);
 
-// Helper for operator string
+// Helpers for operator strings
 const char* binary_op_to_string(BinaryOpType op);
+const char* update_op_to_string(UpdateOpType op);
 
 #endif // AST_H

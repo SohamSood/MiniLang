@@ -22,6 +22,7 @@ typedef enum { //constraints
     TOKEN_IF, //if conditiom
     TOKEN_ELSE, //else condition
     TOKEN_WHILE, //while loop
+    TOKEN_FOR, //for loop
     TOKEN_FUNCTION, //function declaration
     TOKEN_RETURN, //return statement in fxn
 
@@ -37,6 +38,8 @@ typedef enum { //constraints
     TOKEN_LESS_EQUAL,    // <=
     TOKEN_GREATER,       // >
     TOKEN_GREATER_EQUAL, // >=
+    TOKEN_INCREMENT,     // ++
+    TOKEN_DECREMENT,     // --
 
     // Delimiters
     TOKEN_LPAREN,        // (

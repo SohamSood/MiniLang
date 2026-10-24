@@ -28,10 +28,10 @@ flowchart LR
 | Category | Supported features |
 | --- | --- |
 | Values | Integer and numeric literals |
-| Expressions | `+`, `-`, `*`, `/`, parentheses, operator precedence |
+| Expressions | `+`, `-`, `*`, `/`, `++`, `--` (pre & post inc/dec), parentheses, operator precedence |
 | Variables | `let` declarations and reassignment |
 | Comparisons | `>`, `<`, `>=`, `<=`, `==`, `!=` |
-| Control flow | `if`, `else`, `while` |
+| Control flow | `if`, `else`, `while`, `for` |
 | Functions | Parameters, calls, and `return` |
 | Output | `print()` |
 | Comments | Single-line comments using `//` |
@@ -95,6 +95,22 @@ while (i <= 3) {
     }
     i = i + 1;
 }
+```
+
+### For Loops and Increment / Decrement
+
+```text
+// For loop with declaration and post-increment
+for (let j = 1; j <= 5; j++) {
+    print(j);
+}
+
+// Pre- and post-increment and decrement
+let a = 10;
+a++;       // 11
+print(++a); // 12
+a--;       // 11
+print(--a); // 10
 ```
 
 ### Functions
@@ -201,6 +217,8 @@ Example:
 - `06_functions.ml` - functions and return values
 - `07_fibonacci.ml` - recursion and control flow
 - `08_error_handling.ml` - diagnostic examples
+- `09_for_loop.ml` - for loops and nested loops
+- `10_inc_dec.ml` - pre and post increment/decrement
 
 
 ## Limitations

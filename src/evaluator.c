@@ -203,6 +203,44 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
             return result;
         }
 
+        case AST_INC_DEC: {
+            double current_val = 0.0;
+            if (!env_get(env, node->data.inc_dec.name, &current_val)) {
+                fprintf(stderr, "Runtime Error [Line %d]: undefined variable '%s'\n",
+                        node->line, node->data.inc_dec.name);
+            }
+
+            double new_val = current_val;
+            double return_val = current_val;
+
+            switch (node->data.inc_dec.op) {
+                case OP_PRE_INC:
+                    new_val = current_val + 1.0;
+                    return_val = new_val;
+                    break;
+                case OP_POST_INC:
+                    new_val = current_val + 1.0;
+                    return_val = current_val;
+                    break;
+                case OP_PRE_DEC:
+                    new_val = current_val - 1.0;
+                    return_val = new_val;
+                    break;
+                case OP_POST_DEC:
+                    new_val = current_val - 1.0;
+                    return_val = current_val;
+                    break;
+            }
+
+            if (!env_assign(env, node->data.inc_dec.name, new_val)) {
+                fprintf(stderr, "Runtime Error [Line %d]: undefined variable '%s'\n",
+                        node->line, node->data.inc_dec.name);
+            }
+
+            result.value = return_val;
+            return result;
+        }
+
         case AST_BLOCK:
         case AST_PROGRAM: {
             for (int i = 0; i < node->data.block.count; i++) {
@@ -233,6 +271,29 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
                 result = eval_node(node->data.while_stmt.body, env, ft);
                 if (result.is_return) {
                     return result;
+                }
+            }
+            result.is_return = 0;
+            return result;
+        }
+
+        case AST_FOR: {
+            if (node->data.for_stmt.init) {
+                eval_node(node->data.for_stmt.init, env, ft);
+            }
+            while (1) {
+                if (node->data.for_stmt.condition) {
+                    EvalResult cond_res = eval_node(node->data.for_stmt.condition, env, ft);
+                    if (cond_res.value == 0.0) {
+                        break;
+                    }
+                }
+                result = eval_node(node->data.for_stmt.body, env, ft);
+                if (result.is_return) {
+                    return result;
+                }
+                if (node->data.for_stmt.update) {
+                    eval_node(node->data.for_stmt.update, env, ft);
                 }
             }
             result.is_return = 0;
