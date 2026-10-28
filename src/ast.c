@@ -157,6 +157,11 @@ const char* binary_op_to_string(BinaryOpType op) {
         case OP_LTE: return "<=";
         case OP_GT:  return ">";
         case OP_GTE: return ">=";
+        case OP_AND:  return "and";
+        case OP_OR:   return "or";
+        case OP_XOR:  return "xor";
+        case OP_NOR:  return "nor";
+        case OP_NAND: return "nand";
         default: return "?";
     }
 }

@@ -40,6 +40,11 @@ typedef enum { //constraints
     TOKEN_GREATER_EQUAL, // >=
     TOKEN_INCREMENT,     // ++
     TOKEN_DECREMENT,     // --
+    TOKEN_AND,           // and, &, &&
+    TOKEN_OR,            // or, |, ||
+    TOKEN_XOR,           // xor, ^
+    TOKEN_NOR,           // nor
+    TOKEN_NAND,          // nand
 
     // Delimiters
     TOKEN_LPAREN,        // (

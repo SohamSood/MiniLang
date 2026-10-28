@@ -173,6 +173,27 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
                 case OP_GTE:
                     result.value = (left_res.value >= right_res.value) ? 1.0 : 0.0;
                     break;
+                case OP_AND:
+                    result.value = (double)((long long)left_res.value & (long long)right_res.value);
+                    break;
+                case OP_OR:
+                    result.value = (double)((long long)left_res.value | (long long)right_res.value);
+                    break;
+                case OP_XOR:
+                    result.value = (double)((long long)left_res.value ^ (long long)right_res.value);
+                    break;
+                case OP_NOR: {
+                    long long l = (long long)left_res.value;
+                    long long r = (long long)right_res.value;
+                    result.value = (!l && !r) ? 1.0 : 0.0;
+                    break;
+                }
+                case OP_NAND: {
+                    long long l = (long long)left_res.value;
+                    long long r = (long long)right_res.value;
+                    result.value = !(l && r) ? 1.0 : 0.0;
+                    break;
+                }
             }
             return result;
         }

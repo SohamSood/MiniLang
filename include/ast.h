@@ -37,7 +37,12 @@ typedef enum {
     OP_LT,        // <
     OP_LTE,       // <=
     OP_GT,        // >
-    OP_GTE        // >=
+    OP_GTE,       // >=
+    OP_AND,       // and, &, &&
+    OP_OR,        // or, |, ||
+    OP_XOR,       // xor, ^
+    OP_NOR,       // nor
+    OP_NAND       // nand
 } BinaryOpType;
 
 typedef enum {

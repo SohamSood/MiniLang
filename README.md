@@ -29,6 +29,7 @@ flowchart LR
 | --- | --- |
 | Values | Integer and numeric literals |
 | Expressions | `+`, `-`, `*`, `/`, `++`, `--` (pre & post inc/dec), parentheses, operator precedence |
+| Binary Logic & Bitwise | `and` (`&`, `&&`), `or` (`|`, `||`), `xor` (`^`), `nor`, `nand` |
 | Variables | `let` declarations and reassignment |
 | Comparisons | `>`, `<`, `>=`, `<=`, `==`, `!=` |
 | Control flow | `if`, `else`, `while`, `for` |
@@ -111,6 +112,24 @@ a++;       // 11
 print(++a); // 12
 a--;       // 11
 print(--a); // 10
+```
+
+### Binary Logic and Bitwise Operations
+
+```text
+// Bitwise operations on numbers
+print(5 and 3);  // 1 (bitwise AND)
+print(5 or 3);   // 7 (bitwise OR)
+print(5 xor 3);  // 6 (bitwise XOR)
+
+// Boolean logic gates and conditions
+print(1 nor 0);  // 0 (NOR gate)
+print(0 nor 0);  // 1 (NOR gate)
+print(1 nand 1); // 0 (NAND gate)
+
+if (a < 15 and b > 15) {
+    print(100);
+}
 ```
 
 ### Functions
@@ -219,6 +238,7 @@ Example:
 - `08_error_handling.ml` - diagnostic examples
 - `09_for_loop.ml` - for loops and nested loops
 - `10_inc_dec.ml` - pre and post increment/decrement
+- `11_binary_logic.ml` - binary logic and bitwise operators (and, or, xor, nor, nand)
 
 
 ## Limitations

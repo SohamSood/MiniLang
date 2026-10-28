@@ -193,8 +193,51 @@ static ASTNode* parse_comparison(Parser* parser) {
     return left;
 }
 
+static ASTNode* parse_bitwise_and(Parser* parser) {
+    ASTNode* left = parse_comparison(parser);
+
+    while (match(parser, TOKEN_AND) || match(parser, TOKEN_NAND)) {
+        TokenType op_type = parser->current_token.type;
+        int line = parser->current_token.line;
+        advance(parser);
+        ASTNode* right = parse_comparison(parser);
+        BinaryOpType op = (op_type == TOKEN_AND) ? OP_AND : OP_NAND;
+        left = ast_new_binary_op(op, left, right, line);
+    }
+
+    return left;
+}
+
+static ASTNode* parse_bitwise_xor(Parser* parser) {
+    ASTNode* left = parse_bitwise_and(parser);
+
+    while (match(parser, TOKEN_XOR)) {
+        int line = parser->current_token.line;
+        advance(parser);
+        ASTNode* right = parse_bitwise_and(parser);
+        left = ast_new_binary_op(OP_XOR, left, right, line);
+    }
+
+    return left;
+}
+
+static ASTNode* parse_bitwise_or(Parser* parser) {
+    ASTNode* left = parse_bitwise_xor(parser);
+
+    while (match(parser, TOKEN_OR) || match(parser, TOKEN_NOR)) {
+        TokenType op_type = parser->current_token.type;
+        int line = parser->current_token.line;
+        advance(parser);
+        ASTNode* right = parse_bitwise_xor(parser);
+        BinaryOpType op = (op_type == TOKEN_OR) ? OP_OR : OP_NOR;
+        left = ast_new_binary_op(op, left, right, line);
+    }
+
+    return left;
+}
+
 static ASTNode* parse_expression(Parser* parser) {
-    return parse_comparison(parser);
+    return parse_bitwise_or(parser);
 }
 
 static ASTNode* parse_block(Parser* parser) {

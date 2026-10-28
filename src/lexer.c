@@ -67,6 +67,11 @@ static TokenType check_keyword(const char* text) {
     if (strcmp(text, "for") == 0) return TOKEN_FOR;
     if (strcmp(text, "function") == 0) return TOKEN_FUNCTION;
     if (strcmp(text, "return") == 0) return TOKEN_RETURN;
+    if (strcmp(text, "and") == 0) return TOKEN_AND;
+    if (strcmp(text, "or") == 0) return TOKEN_OR;
+    if (strcmp(text, "xor") == 0) return TOKEN_XOR;
+    if (strcmp(text, "nor") == 0) return TOKEN_NOR;
+    if (strcmp(text, "nand") == 0) return TOKEN_NAND;
     return TOKEN_IDENTIFIER;
 }
 
@@ -144,6 +149,14 @@ Token lexer_next_token(Lexer* lexer) {
         advance(lexer); advance(lexer);
         return make_token(TOKEN_DECREMENT, "--", start_line);
     }
+    if (c == '&' && peek_next(lexer) == '&') {
+        advance(lexer); advance(lexer);
+        return make_token(TOKEN_AND, "&&", start_line);
+    }
+    if (c == '|' && peek_next(lexer) == '|') {
+        advance(lexer); advance(lexer);
+        return make_token(TOKEN_OR, "||", start_line);
+    }
 
     // Single-character operators and delimiters
     advance(lexer);
@@ -155,6 +168,9 @@ Token lexer_next_token(Lexer* lexer) {
         case '=': return make_token(TOKEN_ASSIGN, "=", start_line);
         case '<': return make_token(TOKEN_LESS, "<", start_line);
         case '>': return make_token(TOKEN_GREATER, ">", start_line);
+        case '&': return make_token(TOKEN_AND, "&", start_line);
+        case '|': return make_token(TOKEN_OR, "|", start_line);
+        case '^': return make_token(TOKEN_XOR, "^", start_line);
         case '(': return make_token(TOKEN_LPAREN, "(", start_line);
         case ')': return make_token(TOKEN_RPAREN, ")", start_line);
         case '{': return make_token(TOKEN_LBRACE, "{", start_line);
@@ -195,6 +211,11 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_GREATER_EQUAL: return ">=";
         case TOKEN_INCREMENT: return "++";
         case TOKEN_DECREMENT: return "--";
+        case TOKEN_AND: return "and";
+        case TOKEN_OR: return "or";
+        case TOKEN_XOR: return "xor";
+        case TOKEN_NOR: return "nor";
+        case TOKEN_NAND: return "nand";
         case TOKEN_LPAREN: return "(";
         case TOKEN_RPAREN: return ")";
         case TOKEN_LBRACE: return "{";

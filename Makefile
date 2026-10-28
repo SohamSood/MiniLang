@@ -34,3 +34,4 @@ test: $(TARGET)
 	./$(TARGET) examples/07_fibonacci.ml
 	./$(TARGET) examples/09_for_loop.ml
 	./$(TARGET) examples/10_inc_dec.ml
+	./$(TARGET) examples/11_binary_logic.ml
