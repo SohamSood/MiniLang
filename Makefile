@@ -35,3 +35,4 @@ test: $(TARGET)
 	./$(TARGET) examples/09_for_loop.ml
 	./$(TARGET) examples/10_inc_dec.ml
 	./$(TARGET) examples/11_binary_logic.ml
+	./$(TARGET) examples/12_modulo_break_continue.ml

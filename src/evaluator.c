@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "evaluator.h"
 
 // Pointer to global environment for function call scoping
@@ -114,7 +115,7 @@ static void print_number(double val) {
 }
 
 EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
-    EvalResult result = { 0, 0.0 };
+    EvalResult result = { 0, 0, 0, 0.0 };
     if (!node) return result;
 
     switch (node->type) {
@@ -153,6 +154,14 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
                         result.value = 0.0;
                     } else {
                         result.value = left_res.value / right_res.value;
+                    }
+                    break;
+                case OP_MOD:
+                    if (right_res.value == 0.0) {
+                        fprintf(stderr, "Runtime Error [Line %d]: modulo by zero\n", node->line);
+                        result.value = 0.0;
+                    } else {
+                        result.value = fmod(left_res.value, right_res.value);
                     }
                     break;
                 case OP_EQ:
@@ -266,8 +275,8 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
         case AST_PROGRAM: {
             for (int i = 0; i < node->data.block.count; i++) {
                 result = eval_node(node->data.block.statements[i], env, ft);
-                if (result.is_return) {
-                    return result; // Propagate return out of block
+                if (result.is_return || result.is_break || result.is_continue) {
+                    return result; // Propagate return/break/continue out of block
                 }
             }
             return result;
@@ -293,8 +302,18 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
                 if (result.is_return) {
                     return result;
                 }
+                if (result.is_break) {
+                    result.is_break = 0;
+                    break;
+                }
+                if (result.is_continue) {
+                    result.is_continue = 0;
+                    continue;
+                }
             }
             result.is_return = 0;
+            result.is_break = 0;
+            result.is_continue = 0;
             return result;
         }
 
@@ -313,11 +332,24 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
                 if (result.is_return) {
                     return result;
                 }
+                if (result.is_break) {
+                    result.is_break = 0;
+                    break;
+                }
+                if (result.is_continue) {
+                    result.is_continue = 0;
+                    if (node->data.for_stmt.update) {
+                        eval_node(node->data.for_stmt.update, env, ft);
+                    }
+                    continue;
+                }
                 if (node->data.for_stmt.update) {
                     eval_node(node->data.for_stmt.update, env, ft);
                 }
             }
             result.is_return = 0;
+            result.is_break = 0;
+            result.is_continue = 0;
             return result;
         }
 
@@ -364,8 +396,16 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
             if (arg_vals) free(arg_vals);
             env_free(local_env);
 
+            if (body_res.is_break) {
+                fprintf(stderr, "Runtime Error [Line %d]: 'break' outside of loop\n", node->line);
+            } else if (body_res.is_continue) {
+                fprintf(stderr, "Runtime Error [Line %d]: 'continue' outside of loop\n", node->line);
+            }
+
             // Function call expression yields the returned value
             result.is_return = 0;
+            result.is_break = 0;
+            result.is_continue = 0;
             result.value = body_res.value;
             return result;
         }
@@ -378,6 +418,16 @@ EvalResult eval_node(ASTNode* node, Environment* env, FunctionTable* ft) {
             }
             result.is_return = 1;
             result.value = ret_val;
+            return result;
+        }
+
+        case AST_BREAK: {
+            result.is_break = 1;
+            return result;
+        }
+
+        case AST_CONTINUE: {
+            result.is_continue = 1;
             return result;
         }
     }
@@ -394,7 +444,12 @@ void evaluate(ASTNode* root) {
     FunctionTable ft;
     function_table_init(&ft);
 
-    eval_node(root, global_env, &ft);
+    EvalResult res = eval_node(root, global_env, &ft);
+    if (res.is_break) {
+        fprintf(stderr, "Runtime Error: 'break' outside of loop\n");
+    } else if (res.is_continue) {
+        fprintf(stderr, "Runtime Error: 'continue' outside of loop\n");
+    }
 
     env_free(global_env);
     g_global_env = NULL;

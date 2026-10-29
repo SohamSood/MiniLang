@@ -67,6 +67,8 @@ static TokenType check_keyword(const char* text) {
     if (strcmp(text, "for") == 0) return TOKEN_FOR;
     if (strcmp(text, "function") == 0) return TOKEN_FUNCTION;
     if (strcmp(text, "return") == 0) return TOKEN_RETURN;
+    if (strcmp(text, "break") == 0) return TOKEN_BREAK;
+    if (strcmp(text, "continue") == 0) return TOKEN_CONTINUE;
     if (strcmp(text, "and") == 0) return TOKEN_AND;
     if (strcmp(text, "or") == 0) return TOKEN_OR;
     if (strcmp(text, "xor") == 0) return TOKEN_XOR;
@@ -165,6 +167,7 @@ Token lexer_next_token(Lexer* lexer) {
         case '-': return make_token(TOKEN_MINUS, "-", start_line);
         case '*': return make_token(TOKEN_STAR, "*", start_line);
         case '/': return make_token(TOKEN_SLASH, "/", start_line);
+        case '%': return make_token(TOKEN_MODULO, "%", start_line);
         case '=': return make_token(TOKEN_ASSIGN, "=", start_line);
         case '<': return make_token(TOKEN_LESS, "<", start_line);
         case '>': return make_token(TOKEN_GREATER, ">", start_line);
@@ -198,10 +201,13 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_FOR: return "for";
         case TOKEN_FUNCTION: return "function";
         case TOKEN_RETURN: return "return";
+        case TOKEN_BREAK: return "break";
+        case TOKEN_CONTINUE: return "continue";
         case TOKEN_PLUS: return "+";
         case TOKEN_MINUS: return "-";
         case TOKEN_STAR: return "*";
         case TOKEN_SLASH: return "/";
+        case TOKEN_MODULO: return "%";
         case TOKEN_ASSIGN: return "=";
         case TOKEN_EQUAL: return "==";
         case TOKEN_NOT_EQUAL: return "!=";

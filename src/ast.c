@@ -145,12 +145,21 @@ ASTNode* ast_new_return(ASTNode* expr, int line) {
     return node;
 }
 
+ASTNode* ast_new_break(int line) {
+    return create_node(AST_BREAK, line);
+}
+
+ASTNode* ast_new_continue(int line) {
+    return create_node(AST_CONTINUE, line);
+}
+
 const char* binary_op_to_string(BinaryOpType op) {
     switch (op) {
         case OP_ADD: return "+";
         case OP_SUB: return "-";
         case OP_MUL: return "*";
         case OP_DIV: return "/";
+        case OP_MOD: return "%";
         case OP_EQ:  return "==";
         case OP_NEQ: return "!=";
         case OP_LT:  return "<";
@@ -258,6 +267,10 @@ void ast_free(ASTNode* node) {
                 ast_free(node->data.return_stmt.expr);
             }
             break;
+
+        case AST_BREAK:
+        case AST_CONTINUE:
+            break;
     }
 
     free(node);
@@ -313,6 +326,18 @@ void ast_print_compact(ASTNode* node) {
             }
             break;
 
+        case AST_IF:
+            printf("IF(");
+            ast_print_compact(node->data.if_stmt.condition);
+            printf(")");
+            break;
+
+        case AST_WHILE:
+            printf("WHILE(");
+            ast_print_compact(node->data.while_stmt.condition);
+            printf(")");
+            break;
+
         case AST_FOR:
             printf("FOR(");
             if (node->data.for_stmt.init) ast_print_compact(node->data.for_stmt.init);
@@ -337,6 +362,14 @@ void ast_print_compact(ASTNode* node) {
             if (node->data.return_stmt.expr) {
                 ast_print_compact(node->data.return_stmt.expr);
             }
+            break;
+
+        case AST_BREAK:
+            printf("BREAK");
+            break;
+
+        case AST_CONTINUE:
+            printf("CONTINUE");
             break;
 
         default:
@@ -474,6 +507,14 @@ static void ast_print_indented(ASTNode* node, int indent) {
             if (node->data.return_stmt.expr) {
                 ast_print_indented(node->data.return_stmt.expr, indent + 1);
             }
+            break;
+
+        case AST_BREAK:
+            printf("BREAK\n");
+            break;
+
+        case AST_CONTINUE:
+            printf("CONTINUE\n");
             break;
     }
 }

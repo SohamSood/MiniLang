@@ -138,12 +138,19 @@ static ASTNode* parse_primary(Parser* parser) {
 static ASTNode* parse_multiplicative(Parser* parser) {
     ASTNode* left = parse_primary(parser);
 
-    while (match(parser, TOKEN_STAR) || match(parser, TOKEN_SLASH)) {
+    while (match(parser, TOKEN_STAR) || match(parser, TOKEN_SLASH) || match(parser, TOKEN_MODULO)) {
         TokenType op_type = parser->current_token.type;
         int line = parser->current_token.line;
         advance(parser);
         ASTNode* right = parse_primary(parser);
-        BinaryOpType op = (op_type == TOKEN_STAR) ? OP_MUL : OP_DIV;
+        BinaryOpType op;
+        if (op_type == TOKEN_STAR) {
+            op = OP_MUL;
+        } else if (op_type == TOKEN_SLASH) {
+            op = OP_DIV;
+        } else {
+            op = OP_MOD;
+        }
         left = ast_new_binary_op(op, left, right, line);
     }
 
@@ -563,6 +570,20 @@ static ASTNode* parse_return(Parser* parser) {
     return ast_new_return(expr, line);
 }
 
+static ASTNode* parse_break(Parser* parser) {
+    int line = parser->current_token.line;
+    advance(parser); // consume 'break'
+    expect(parser, TOKEN_SEMICOLON, "expected ';' after break statement");
+    return ast_new_break(line);
+}
+
+static ASTNode* parse_continue(Parser* parser) {
+    int line = parser->current_token.line;
+    advance(parser); // consume 'continue'
+    expect(parser, TOKEN_SEMICOLON, "expected ';' after continue statement");
+    return ast_new_continue(line);
+}
+
 static ASTNode* parse_statement(Parser* parser) {
     if (match(parser, TOKEN_LET)) {
         return parse_var_decl(parser);
@@ -584,6 +605,12 @@ static ASTNode* parse_statement(Parser* parser) {
     }
     if (match(parser, TOKEN_RETURN)) {
         return parse_return(parser);
+    }
+    if (match(parser, TOKEN_BREAK)) {
+        return parse_break(parser);
+    }
+    if (match(parser, TOKEN_CONTINUE)) {
+        return parse_continue(parser);
     }
 
     if (match(parser, TOKEN_INCREMENT)) {

@@ -25,12 +25,15 @@ typedef enum { //constraints
     TOKEN_FOR, //for loop
     TOKEN_FUNCTION, //function declaration
     TOKEN_RETURN, //return statement in fxn
+    TOKEN_BREAK,  // break statement in loop
+    TOKEN_CONTINUE, // continue statement in loop
 
     // Operators
     TOKEN_PLUS,          // +
     TOKEN_MINUS,         // -
     TOKEN_STAR,          // *
     TOKEN_SLASH,         // /
+    TOKEN_MODULO,        // %
     TOKEN_ASSIGN,        // =
     TOKEN_EQUAL,         // ==
     TOKEN_NOT_EQUAL,     // !=

@@ -24,6 +24,8 @@ typedef enum {
     AST_FUNC_DECL,
     AST_CALL,
     AST_RETURN,
+    AST_BREAK,
+    AST_CONTINUE,
     AST_PROGRAM
 } ASTNodeType;
 
@@ -32,6 +34,7 @@ typedef enum {
     OP_SUB,       // -
     OP_MUL,       // *
     OP_DIV,       // /
+    OP_MOD,       // %
     OP_EQ,        // ==
     OP_NEQ,       // !=
     OP_LT,        // <
@@ -166,6 +169,8 @@ ASTNode* ast_new_for(ASTNode* init, ASTNode* condition, ASTNode* update, ASTNode
 ASTNode* ast_new_func_decl(const char* name, char** params, int param_count, ASTNode* body, int line);
 ASTNode* ast_new_call(const char* name, ASTNode** args, int arg_count, int line);
 ASTNode* ast_new_return(ASTNode* expr, int line);
+ASTNode* ast_new_break(int line);
+ASTNode* ast_new_continue(int line);
 
 // Memory cleanup
 void ast_free(ASTNode* node);

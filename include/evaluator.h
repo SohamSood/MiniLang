@@ -13,8 +13,10 @@
 
 // Result of evaluating an AST node
 typedef struct {
-    int is_return; // Flag indicating a 'return' statement was encountered
-    double value;  // Value associated with expression or return
+    int is_return;   // Flag indicating a 'return' statement was encountered
+    int is_break;    // Flag indicating a 'break' statement was encountered
+    int is_continue; // Flag indicating a 'continue' statement was encountered
+    double value;    // Value associated with expression or return
 } EvalResult;
 
 // Variable entry in the symbol table

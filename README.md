@@ -28,11 +28,11 @@ flowchart LR
 | Category | Supported features |
 | --- | --- |
 | Values | Integer and numeric literals |
-| Expressions | `+`, `-`, `*`, `/`, `++`, `--` (pre & post inc/dec), parentheses, operator precedence |
+| Expressions | `+`, `-`, `*`, `/`, `%` (modulo), `++`, `--` (pre & post inc/dec), parentheses, operator precedence |
 | Binary Logic & Bitwise | `and` (`&`, `&&`), `or` (`|`, `||`), `xor` (`^`), `nor`, `nand` |
 | Variables | `let` declarations and reassignment |
 | Comparisons | `>`, `<`, `>=`, `<=`, `==`, `!=` |
-| Control flow | `if`, `else`, `while`, `for` |
+| Control flow | `if`, `else`, `while`, `for`, `break`, `continue` |
 | Functions | Parameters, calls, and `return` |
 | Output | `print()` |
 | Comments | Single-line comments using `//` |
@@ -239,6 +239,7 @@ Example:
 - `09_for_loop.ml` - for loops and nested loops
 - `10_inc_dec.ml` - pre and post increment/decrement
 - `11_binary_logic.ml` - binary logic and bitwise operators (and, or, xor, nor, nand)
+- `12_modulo_break_continue.ml` - modulo operator (%), break, and continue statements
 
 
 ## Limitations
