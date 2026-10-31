@@ -13,8 +13,9 @@ typedef enum { //constraints
     TOKEN_ERROR,
 
     // Literals & Identifiers
-    TOKEN_NUMBER, //123
-    TOKEN_IDENTIFIER, //abc
+    TOKEN_NUMBER,     // 123
+    TOKEN_STRING,     // "hello world"
+    TOKEN_IDENTIFIER, // abc
 
     // Keywords
     TOKEN_LET, //variable declaration
@@ -43,6 +44,7 @@ typedef enum { //constraints
     TOKEN_GREATER_EQUAL, // >=
     TOKEN_INCREMENT,     // ++
     TOKEN_DECREMENT,     // --
+    TOKEN_BANG,          // !
     TOKEN_AND,           // and, &, &&
     TOKEN_OR,            // or, |, ||
     TOKEN_XOR,           // xor, ^
@@ -60,7 +62,7 @@ typedef enum { //constraints
 
 typedef struct {
     TokenType type; //abc or 123 , number or identifier
-    char text[64];       // stores the values
+    char text[256];      // stores string literals or identifier names
     double number_val;   // Parsed numeric value (if TOKEN_NUMBER)
     int line;            // Source line number for error reporting
 } Token;

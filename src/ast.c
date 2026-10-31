@@ -25,10 +25,23 @@ ASTNode* ast_new_number(double value, int line) {
     return node;
 }
 
+ASTNode* ast_new_string(const char* value, int line) {
+    ASTNode* node = create_node(AST_STRING, line);
+    node->data.string.value = strdup(value ? value : "");
+    return node;
+}
+
 ASTNode* ast_new_var(const char* name, int line) {
     ASTNode* node = create_node(AST_VAR, line);
     strncpy(node->data.var.name, name, sizeof(node->data.var.name) - 1);
     node->data.var.name[sizeof(node->data.var.name) - 1] = '\0';
+    return node;
+}
+
+ASTNode* ast_new_unary_op(UnaryOpType op, ASTNode* operand, int line) {
+    ASTNode* node = create_node(AST_UNARY_OP, line);
+    node->data.unary_op.op = op;
+    node->data.unary_op.operand = operand;
     return node;
 }
 
@@ -153,6 +166,14 @@ ASTNode* ast_new_continue(int line) {
     return create_node(AST_CONTINUE, line);
 }
 
+const char* unary_op_to_string(UnaryOpType op) {
+    switch (op) {
+        case UNARY_NEGATE: return "-";
+        case UNARY_NOT:    return "!";
+        default: return "?";
+    }
+}
+
 const char* binary_op_to_string(BinaryOpType op) {
     switch (op) {
         case OP_ADD: return "+";
@@ -191,6 +212,16 @@ void ast_free(ASTNode* node) {
     switch (node->type) {
         case AST_NUMBER:
         case AST_VAR:
+            break;
+
+        case AST_STRING:
+            if (node->data.string.value) {
+                free(node->data.string.value);
+            }
+            break;
+
+        case AST_UNARY_OP:
+            ast_free(node->data.unary_op.operand);
             break;
 
         case AST_BINARY_OP:
@@ -289,8 +320,17 @@ void ast_print_compact(ASTNode* node) {
             }
             break;
 
+        case AST_STRING:
+            printf("\"%s\"", node->data.string.value ? node->data.string.value : "");
+            break;
+
         case AST_VAR:
             printf("%s", node->data.var.name);
+            break;
+
+        case AST_UNARY_OP:
+            printf("%s", unary_op_to_string(node->data.unary_op.op));
+            ast_print_compact(node->data.unary_op.operand);
             break;
 
         case AST_BINARY_OP:
@@ -397,8 +437,17 @@ static void ast_print_indented(ASTNode* node, int indent) {
             }
             break;
 
+        case AST_STRING:
+            printf("STRING: \"%s\"\n", node->data.string.value ? node->data.string.value : "");
+            break;
+
         case AST_VAR:
             printf("VAR: %s\n", node->data.var.name);
+            break;
+
+        case AST_UNARY_OP:
+            printf("UNARY_OP (%s):\n", unary_op_to_string(node->data.unary_op.op));
+            ast_print_indented(node->data.unary_op.operand, indent + 1);
             break;
 
         case AST_BINARY_OP:

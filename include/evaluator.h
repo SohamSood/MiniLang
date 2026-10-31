@@ -11,18 +11,33 @@
  
 #include "ast.h"
 
+// Value Types in MiniLang
+typedef enum {
+    VAL_NUMBER,
+    VAL_STRING
+} ValueType;
+
+// Dynamic tagged runtime value
+typedef struct {
+    ValueType type;
+    union {
+        double number;
+        char* string; // Heap-allocated string
+    } as;
+} Value;
+
 // Result of evaluating an AST node
 typedef struct {
     int is_return;   // Flag indicating a 'return' statement was encountered
     int is_break;    // Flag indicating a 'break' statement was encountered
     int is_continue; // Flag indicating a 'continue' statement was encountered
-    double value;    // Value associated with expression or return
+    Value value;     // Value associated with expression or return
 } EvalResult;
 
 // Variable entry in the symbol table
 typedef struct {
     char name[64];
-    double value;
+    Value value;
 } Variable;
 
 // Environment supporting nested scopes (e.g. for functions)
@@ -43,12 +58,19 @@ typedef struct {
     int function_count;
 } FunctionTable;
 
+// Value constructors and helpers
+Value        value_make_number(double num);
+Value        value_make_string(const char* str);
+Value        value_copy(Value val);
+void         value_free(Value val);
+int          value_is_truthy(Value val);
+
 // Environment management
 Environment* env_create(Environment* parent);
 void         env_free(Environment* env);
-int          env_set(Environment* env, const char* name, double value);
-int          env_get(Environment* env, const char* name, double* out_value);
-int          env_assign(Environment* env, const char* name, double value);
+int          env_set(Environment* env, const char* name, Value value);
+int          env_get(Environment* env, const char* name, Value* out_value);
+int          env_assign(Environment* env, const char* name, Value value);
 
 // Function table management
 void         function_table_init(FunctionTable* ft);

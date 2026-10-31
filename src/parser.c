@@ -14,6 +14,7 @@
 static ASTNode* parse_expression(Parser* parser);
 static ASTNode* parse_statement(Parser* parser);
 static ASTNode* parse_block(Parser* parser);
+static ASTNode* parse_unary(Parser* parser);
 
 static void advance(Parser* parser) {
     parser->current_token = lexer_next_token(parser->lexer);
@@ -53,10 +54,24 @@ static ASTNode* parse_primary(Parser* parser) {
         return ast_new_number(val, line);
     }
 
+    if (match(parser, TOKEN_STRING)) {
+        char text[256];
+        strncpy(text, parser->current_token.text, sizeof(text) - 1);
+        text[sizeof(text) - 1] = '\0';
+        advance(parser);
+        return ast_new_string(text, line);
+    }
+
     if (match(parser, TOKEN_MINUS)) {
         advance(parser);
-        ASTNode* right = parse_primary(parser);
-        return ast_new_binary_op(OP_SUB, ast_new_number(0.0, line), right, line);
+        ASTNode* operand = parse_unary(parser);
+        return ast_new_unary_op(UNARY_NEGATE, operand, line);
+    }
+
+    if (match(parser, TOKEN_BANG)) {
+        advance(parser);
+        ASTNode* operand = parse_unary(parser);
+        return ast_new_unary_op(UNARY_NOT, operand, line);
     }
 
     if (match(parser, TOKEN_INCREMENT)) {
@@ -135,14 +150,29 @@ static ASTNode* parse_primary(Parser* parser) {
     return NULL;
 }
 
+static ASTNode* parse_unary(Parser* parser) {
+    int line = parser->current_token.line;
+    if (match(parser, TOKEN_MINUS)) {
+        advance(parser);
+        ASTNode* operand = parse_unary(parser);
+        return ast_new_unary_op(UNARY_NEGATE, operand, line);
+    }
+    if (match(parser, TOKEN_BANG)) {
+        advance(parser);
+        ASTNode* operand = parse_unary(parser);
+        return ast_new_unary_op(UNARY_NOT, operand, line);
+    }
+    return parse_primary(parser);
+}
+
 static ASTNode* parse_multiplicative(Parser* parser) {
-    ASTNode* left = parse_primary(parser);
+    ASTNode* left = parse_unary(parser);
 
     while (match(parser, TOKEN_STAR) || match(parser, TOKEN_SLASH) || match(parser, TOKEN_MODULO)) {
         TokenType op_type = parser->current_token.type;
         int line = parser->current_token.line;
         advance(parser);
-        ASTNode* right = parse_primary(parser);
+        ASTNode* right = parse_unary(parser);
         BinaryOpType op;
         if (op_type == TOKEN_STAR) {
             op = OP_MUL;

@@ -27,16 +27,16 @@ flowchart LR
 
 | Category | Supported features |
 | --- | --- |
-| Values | Integer and numeric literals |
-| Expressions | `+`, `-`, `*`, `/`, `%` (modulo), `++`, `--` (pre & post inc/dec), parentheses, operator precedence |
+| Values | Integer, floating-point numeric literals, and double-quoted string literals with escape sequences (`\n`, `\t`, `\"`) |
+| Expressions | `+`, `-`, `*`, `/`, `%` (modulo), unary negation (`-x`), logical NOT (`!x`), string concatenation (`+`), `++`, `--` (pre & post inc/dec), parentheses, operator precedence |
 | Binary Logic & Bitwise | `and` (`&`, `&&`), `or` (`|`, `||`), `xor` (`^`), `nor`, `nand` |
 | Variables | `let` declarations and reassignment |
-| Comparisons | `>`, `<`, `>=`, `<=`, `==`, `!=` |
+| Comparisons | `>`, `<`, `>=`, `<=`, `==`, `!=` (numbers & strings) |
 | Control flow | `if`, `else`, `while`, `for`, `break`, `continue` |
-| Functions | Parameters, calls, and `return` |
-| Output | `print()` |
+| Functions | Parameters, calls, and `return` (strings & numbers) |
+| Output | `print()` (numbers & strings) |
 | Comments | Single-line comments using `//` |
-| Errors | Syntax errors, runtime errors, division by zero, undefined variables/functions |
+| Errors | Syntax errors, runtime errors, division/modulo by zero, undefined variables/functions, and strict type mismatch checking (`string + number`, invalid string operations) |
 
 ## Architecture
 

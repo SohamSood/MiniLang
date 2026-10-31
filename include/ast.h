@@ -11,7 +11,9 @@
 
 typedef enum {
     AST_NUMBER,
+    AST_STRING,
     AST_VAR,
+    AST_UNARY_OP,
     AST_BINARY_OP,
     AST_PRINT,
     AST_VAR_DECL,
@@ -28,6 +30,11 @@ typedef enum {
     AST_CONTINUE,
     AST_PROGRAM
 } ASTNodeType;
+
+typedef enum {
+    UNARY_NEGATE, // -x
+    UNARY_NOT     // !x
+} UnaryOpType;
 
 typedef enum {
     OP_ADD,       // +
@@ -67,10 +74,21 @@ typedef struct ASTNode {
             double value;
         } number;
 
+        // AST_STRING: String literal
+        struct {
+            char* value;
+        } string;
+
         // AST_VAR: Variable access
         struct {
             char name[64];
         } var;
+
+        // AST_UNARY_OP: Unary operations (-x, !x)
+        struct {
+            UnaryOpType op;
+            struct ASTNode* operand;
+        } unary_op;
 
         // AST_BINARY_OP: Binary operations (arithmetic and comparison)
         struct {
@@ -154,7 +172,9 @@ typedef struct ASTNode {
 
 // AST Node Constructors
 ASTNode* ast_new_number(double value, int line);
+ASTNode* ast_new_string(const char* value, int line);
 ASTNode* ast_new_var(const char* name, int line);
+ASTNode* ast_new_unary_op(UnaryOpType op, ASTNode* operand, int line);
 ASTNode* ast_new_binary_op(BinaryOpType op, ASTNode* left, ASTNode* right, int line);
 ASTNode* ast_new_inc_dec(UpdateOpType op, const char* name, int line);
 ASTNode* ast_new_print(ASTNode* expr, int line);
@@ -180,6 +200,7 @@ void ast_print(ASTNode* node);
 void ast_print_compact(ASTNode* node);
 
 // Helpers for operator strings
+const char* unary_op_to_string(UnaryOpType op);
 const char* binary_op_to_string(BinaryOpType op);
 const char* update_op_to_string(UpdateOpType op);
 

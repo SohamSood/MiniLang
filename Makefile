@@ -36,3 +36,4 @@ test: $(TARGET)
 	./$(TARGET) examples/10_inc_dec.ml
 	./$(TARGET) examples/11_binary_logic.ml
 	./$(TARGET) examples/12_modulo_break_continue.ml
+	./$(TARGET) examples/13_strings_unary_type_errors.ml

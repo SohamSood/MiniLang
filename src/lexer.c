@@ -110,6 +110,35 @@ Token lexer_next_token(Lexer* lexer) {
         return token;
     }
 
+    // String literals ("hello world")
+    if (c == '"') {
+        advance(lexer); // consume opening quote
+        char str_buf[256];
+        int s_idx = 0;
+        while (peek(lexer) != '"' && peek(lexer) != '\0') {
+            char ch = advance(lexer);
+            if (ch == '\\') {
+                char esc = advance(lexer);
+                if (esc == 'n') ch = '\n';
+                else if (esc == 't') ch = '\t';
+                else if (esc == 'r') ch = '\r';
+                else if (esc == '\\') ch = '\\';
+                else if (esc == '"') ch = '"';
+                else ch = esc;
+            }
+            if (s_idx < (int)sizeof(str_buf) - 1) {
+                str_buf[s_idx++] = ch;
+            }
+        }
+        str_buf[s_idx] = '\0';
+        if (peek(lexer) == '"') {
+            advance(lexer); // consume closing quote
+        } else {
+            return make_token(TOKEN_ERROR, "unterminated string literal", start_line);
+        }
+        return make_token(TOKEN_STRING, str_buf, start_line);
+    }
+
     // Identifiers and Keywords
     if (isalpha(c) || c == '_') {
         int start = lexer->cursor;
@@ -180,6 +209,7 @@ Token lexer_next_token(Lexer* lexer) {
         case '}': return make_token(TOKEN_RBRACE, "}", start_line);
         case ',': return make_token(TOKEN_COMMA, ",", start_line);
         case ';': return make_token(TOKEN_SEMICOLON, ";", start_line);
+        case '!': return make_token(TOKEN_BANG, "!", start_line);
         default: {
             char err_str[2] = { c, '\0' };
             return make_token(TOKEN_ERROR, err_str, start_line);
@@ -192,6 +222,7 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_EOF: return "EOF";
         case TOKEN_ERROR: return "ERROR";
         case TOKEN_NUMBER: return "NUMBER";
+        case TOKEN_STRING: return "STRING";
         case TOKEN_IDENTIFIER: return "IDENTIFIER";
         case TOKEN_LET: return "let";
         case TOKEN_PRINT: return "print";
@@ -217,6 +248,7 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_GREATER_EQUAL: return ">=";
         case TOKEN_INCREMENT: return "++";
         case TOKEN_DECREMENT: return "--";
+        case TOKEN_BANG: return "!";
         case TOKEN_AND: return "and";
         case TOKEN_OR: return "or";
         case TOKEN_XOR: return "xor";
